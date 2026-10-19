@@ -4,7 +4,7 @@
 /**
  * Connect Kezhan AI to a 9Router instance.
  *
- * Kezhan AI serves an OpenAI-compatible endpoint (https://inference.kezhanai.global/v1), so a single
+ * Kezhan AI serves an OpenAI-compatible endpoint (https://kezhanai.com/v1), so a single
  * provider-node carries every key: this registers one `openai-compatible` node
  * with prefix `kezhanai` and then one connection per API key, named
  * `kezhanai-001`, `kezhanai-002`, … Re-running it is idempotent (an existing node
@@ -13,7 +13,7 @@
  * Usage:
  *   node src/connect-9router.js \
  *     --base http://localhost:20128 --password 123456 \
- *     --api-key dahl_xxxx [--name "Kezhan AI"] [--prefix kezhanai]
+ *     --api-key <key> [--name "Kezhan AI"] [--prefix kezhanai]
  *
  *   node src/connect-9router.js                  # register every key in keys.txt
  *   node src/connect-9router.js --model <id>     # pin the connection's default model
@@ -24,7 +24,7 @@
  *   --api-key <key>    Kezhan AI API key     (default: every key in keys.txt)
  *   --name <name>      provider-node name       (default Kezhan AI)
  *   --prefix <slug>    provider prefix in 9Router (default kezhanai)
- *   --base-url <url>   provider base URL        (default https://inference.kezhanai.global/v1)
+ *   --base-url <url>   provider base URL        (default https://kezhanai.com/v1)
  *   --model <id>       connection default model (default MiniMaxAI/MiniMax-M2.7)
  *
  * Zero dependencies. Node.js >= 18.
