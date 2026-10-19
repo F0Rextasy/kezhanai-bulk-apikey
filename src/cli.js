@@ -33,10 +33,12 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const lib = require(path.join(__dirname, '..', '_community', 'lib.js'));
-const exits = require('./src/exits.js');
-const captcha = require('./src/captcha.js');
-const { MailRails } = require(path.join(__dirname, '..', '_community', 'mail-rail.js'));
+// Vendored so the shipped `src/cli.js` is self-contained: `./vendor/*` resolves
+// both in the lab checkout and in the published repo.
+const lib = require('./vendor/lib.js');
+const exits = require('./vendor/exits.js');
+const captcha = require('./vendor/captcha.js');
+const { MailRails } = require('./vendor/mail-rail.js');
 
 const argv = process.argv.slice(2);
 const one = (n, d) => { const i = argv.indexOf('--' + n); return i === -1 ? d : argv[i + 1]; };
@@ -61,7 +63,9 @@ const BUDGET_MS = parseInt(one('budget', '2400'), 10) * 1000;
 const BROKER_PORT = parseInt(one('broker-port', '9700'), 10);
 const GAP_MS = Math.max(0, parseInt(one('gap', '1000'), 10)); // industrial pacing is gone
 
-const DIR = __dirname;
+// The checkout root in both layouts: `providers/kezhanai.com/` in the lab,
+// `<repo>/src/..` once published — where `connect-9router.js` reads keys.txt.
+const DIR = path.basename(__dirname) === 'src' ? path.resolve(__dirname, '..') : __dirname;
 fs.mkdirSync(path.join(DIR, 'out'), { recursive: true });
 const KEYS = path.join(DIR, 'keys.txt');
 const UNFUNDED = path.join(DIR, 'keys-unfunded.txt');
