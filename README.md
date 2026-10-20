@@ -85,8 +85,8 @@ curl https://kezhanai.com/v1/chat/completions \
 # clone or fork this repository, then:
 cd kezhanai-bulk-apikey
 
-# 1) your proxy list, one per line (http://… or socks5://…)
-printf 'http://127.0.0.1:8080\n' > proxies.txt
+# 1) your proxy list, one per line (http://… or socks5://…) — optional, see below
+printf 'http://127.0.0.1:8080\n' > proxies.txt   # optional — without it the tool runs direct
 
 # 2) go
 node src/launcher.js        # interactive
@@ -144,14 +144,20 @@ node src/cli.js --count N [--conc N] [--model <id>] [--screen] [--verify-only]
 | `--count` | 5 | rounds (= accounts) to attempt |
 | `--conc` | 10 | parallel rounds (capped at 12) |
 | `--model` | plan pick | explicit id puts the gate first |
-| `--screen` | — | refresh `proxies.txt` from candidate dumps (required first step) |
+| `--screen` | — | refresh `proxies.txt` from candidate dumps (optional — the mint runs without it) |
 | `--verify-only` | — | re-run every key in `keys.txt` through the chat-200 gate |
 | `--budget` | 2400 s | hard stop — workers stop taking rounds |
 | `--mail-order` | `broker,temptf,emailnator` | mailbox rail chain |
 
 ## 🛰️ Behind a proxy
 
-Every request leaves through an exit from your pool. **One critical transport rule:** the captcha `verify` call must come from the **same exit that fetched the challenge** (same-exit 5/5 pass, cross-exit 0/5) — the tool pins the account to one exit and uses a fresh mailbox per hop. `--screen` refreshed 739 candidates in ≈3 min to grow the pool 62 → 132 exits on the operator's fleet.
+**Optional — recommended at scale (per-IP limits, bans).** The tool works without a proxy too.
+
+- **With a pool:** write one exit per line to `proxies.txt` (`http://…` or `socks5://…`, or point `KEZHANAI_PROXIES` at your list) and every request goes through an exit from that list — one account holds one exit for its whole life.
+- **Without a pool:** the CLI prints `running WITHOUT a proxy (direct)` and connects directly — captcha, verification mail, check-in, key mint and the chat gate all run the same way.
+- `--screen` refreshes `proxies.txt` from the candidate dumps; it is not a required first step in either mode.
+
+**One critical transport rule:** the captcha `verify` call must come from the **same exit that fetched the challenge** (same-exit 5/5 pass, cross-exit 0/5) — the tool pins the account to one exit and uses a fresh mailbox per hop. `--screen` refreshed 739 candidates in ≈3 min to grow the pool 62 → 132 exits on the operator's fleet.
 
 ## 📄 Files
 

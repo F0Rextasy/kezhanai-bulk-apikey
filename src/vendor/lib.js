@@ -3,10 +3,10 @@
 /**
  * Shared plumbing for the community-wave mint (providers/_community).
  *
- * Hard rule baked in: **every request that leaves this machine goes through a
- * proxy**. `req()` throws when handed a null proxy instead of silently dialing
- * direct, so a missing exit surfaces as an error, never as our own IP reaching
- * a provider.
+ * Requests go through a proxy when one is given: every transport here (`req`,
+ * the mail rails) takes a parsed exit, and `null` means DIRECT mode — the
+ * request leaves on this machine's own line. A proxy is recommended at scale
+ * (per-IP limits, bans), never required.
  *
  * Reused fleet pieces: `river-bulk-apikey/src/proxy.js` (tunnels + agent),
  * `proxy-lab/as-inbox-broker.js` (Mailtrap / inboxes.com on 127.0.0.1:9700|9701).
@@ -92,14 +92,14 @@ function loadExits(files = DEFAULT_POOLS, { shuffle = true } = {}) {
 }
 
 /**
- * Fail-closed HTTP: no proxy → throw (never fall back to our own address).
+ * HTTP with an exit when one is given: `proxy` is a parsed exit, or `null` for
+ * DIRECT mode (no tunnel — the request leaves on this machine's own line).
  *
  * `agent` (optional) is a caller-owned agent — the pinned flows pass a
  * keep-alive agent so every request of one account reuses a *single* tunnel
  * (one upstream exit), which is what an exit-bound verification code needs.
  */
 function req(proxy, url, { method = 'GET', headers = {}, body = null, timeoutMs = 30000, connectTimeoutMs = 8000, agent = null } = {}) {
-  if (!proxy) return Promise.reject(new Error('refusing direct request (no exit): ' + url));
   return new Promise((resolve, reject) => {
     const u = new URL(url);
     const lib = u.protocol === 'https:' ? https : http;
@@ -108,15 +108,18 @@ function req(proxy, url, { method = 'GET', headers = {}, body = null, timeoutMs 
     const h = { ...headers };
     if (payload && !Object.keys(h).some((k) => k.toLowerCase() === 'content-type')) h['Content-Type'] = 'application/json';
     if (payload && !Object.keys(h).some((k) => k.toLowerCase() === 'content-length')) h['Content-Length'] = payload.length;
-    proxy.connectTimeoutMs = connectTimeoutMs;
-    proxy.timeoutMs = timeoutMs;
+    if (proxy) {
+      proxy.connectTimeoutMs = connectTimeoutMs;
+      proxy.timeoutMs = timeoutMs;
+    }
     const r = lib.request(
       {
         method,
         host: u.hostname,
         port: u.port || (u.protocol === 'https:' ? 443 : 80),
         path: u.pathname + u.search,
-        agent: agent || createAgent(proxy),
+        // DIRECT mode (`proxy === null`): no tunnel agent on the options at all.
+        ...(proxy ? { agent: agent || createAgent(proxy) } : {}),
         headers: h,
       },
       (res) => {
@@ -146,7 +149,7 @@ async function jreq(proxy, url, opts) {
 }
 
 const NETWORK_ERROR =
-  /CONNECT|ECONN|EPIPE|socket|SOCKS|TLS|timeout|aborted|ECONNRESET|ETIMEDOUT|EAI_AGAIN|premature|destroyed|proxy|handshake|auth methods|refusing direct|certificate|self.signed|UNABLE_TO_VERIFY|doesn't match/i;
+  /CONNECT|ECONN|EPIPE|socket|SOCKS|TLS|timeout|aborted|ECONNRESET|ETIMEDOUT|EAI_AGAIN|premature|destroyed|proxy|handshake|auth methods|certificate|self.signed|UNABLE_TO_VERIFY|doesn't match/i;
 
 /** True when the failure is about the exit, not the provider's answer. */
 function isExitError(err) {
@@ -158,6 +161,9 @@ function isExitError(err) {
  * errors, and retires exits that failed twice. Cookie/header state is the
  * caller's job — same as the fleet's other mints, where each step re-picks an
  * exit because free exits live 1–3 minutes.
+ *
+ * A one-entry `[null]` pool is DIRECT mode: `fn` gets the `null` sentinel and
+ * `req` dials the target itself, so no caller needs a branch of its own.
  */
 class ExitPool {
   constructor(exits, { label: tag = '' } = {}) {
@@ -177,7 +183,8 @@ class ExitPool {
     for (let i = 0; i < this.exits.length; i++) {
       const p = this.exits[this.index++ % this.exits.length];
       this.index %= this.exits.length;
-      const d = this.dead.get(p.line) || 0;
+      // `p` may be the `null` direct sentinel (no proxy list): it never dies.
+      const d = this.dead.get(p && p.line) || 0;
       if (d < 2) return p;
     }
     // everything retired: reset so long runs keep moving
