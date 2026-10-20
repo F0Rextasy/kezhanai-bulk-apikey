@@ -16,7 +16,7 @@
  *   GET  /api/stats?providers=…                               -> {totalReceived}
  *
  * Measured 2026-10-18: `/api/account` answered
- * `{"email":"<redacted>@hotmail.com"}` and `/api/check`
+ * `{"email":"<local-part>+<tag>@hotmail.com"}` and `/api/check`
  * answered `{"data":[],"totalReceived":4740775}`, so both the address and the
  * reader work without a browser, a Cloudflare cookie or a captcha.
  *
