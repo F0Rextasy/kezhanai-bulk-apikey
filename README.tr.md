@@ -1,7 +1,6 @@
 <div align="center">
 
 ```
-
 ██╗  ██╗███████╗███████╗██╗  ██╗ █████╗ ███╗   ██╗ █████╗ ██╗
 ██║ ██╔╝██╔════╝╚══███╔╝██║  ██║██╔══██╗████╗  ██║██╔══██╗██║
 █████╔╝ █████╗    ███╔╝ ███████║███████║██╔██╗ ██║███████║██║
@@ -19,9 +18,10 @@
 [![License](https://img.shields.io/badge/license-MIT-6ea8fe?style=for-the-badge)](LICENSE)
 [![Models](https://img.shields.io/badge/models-5%20served-412991?style=for-the-badge)](https://kezhanai.com)
 [![9Router](https://img.shields.io/badge/9Router-connector-8B5CF6?style=for-the-badge)](#-connect-to-9router)
+[![OmniRoute](https://img.shields.io/badge/OmniRoute-connector-8B5CF6?style=for-the-badge)](#-connect-to-omniroute)
 [![X](https://img.shields.io/badge/X-%40bigbullapp-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/bigbullapp)
 
-[🛠 Hızlı başlangıç](#-quick-start) · [🎁 Ücretsiz katman](#-free-tier--how-much-you-get) · [🤖 Modeller](#-models--all-5-of-them) · [🧪 API'yi kullanma](#-how-to-use-the-api) · [✅ Doğrulandı](#-verified-working--every-key-is-tested) · [🧭 Nasıl çalışır](#-how-it-works) · [🔌 9Router](#-connect-to-9router) · [⚙️ Seçenekler](#️-cli-options) · [🛰️ Proxy'ler](#️-behind-a-proxy) · [🐞 Sorunlar](#-issues)
+[🛠 Hızlı başlangıç](#-quick-start) · [🎁 Ücretsiz katman](#-free-tier--how-much-you-get) · [🤖 Modeller](#-models--all-5-of-them) · [🧪 API'yi kullanın](#-how-to-use-the-api) · [✅ Doğrulandı](#-verified-working--every-key-is-tested) · [🧭 Nasıl çalışır](#-how-it-works) · [🔌 9Router](#-connect-to-9router) · [🔌 OmniRoute](#-connect-to-omniroute) · [⚙️ Seçenekler](#️-cli-options) · [🛰️ Proxy'ler](#️-behind-a-proxy) · [🐞 Sorunlar](#-issues)
 
 </div>
 
@@ -35,15 +35,15 @@
 
 ## ✨ Bu neden var
 
-Kezhan AI her yeni hesaba bir **günlük giriş hibesi** verir (günde ≈592-637 kota) ve bu araç bunu, **her satırı canlı bir sohbet çağrısından geçmiş** bir `keys.txt` dosyasına dönüştürür. Ölçeklenen birim *anahtar başına bir hesap*tır, kayıt captcha'sı piksel farkı çözücüsüyle çözülen 12 parçalı bir montajdır ve posta hattı otomatik olarak döner, böylece ölü bir posta kutusu çalışmayı asla durdurmaz.
+Kezhan AI her yeni hesaba bir **günlük giriş hibesi** verir (günde ≈592-637 kota) ve bu araç bunu, **her satırı canlı bir sohbet çağrısından geçmiş** bir `keys.txt` dosyasına dönüştürür. Ölçeklenen birim *anahtar başına bir hesaptır*, kayıt captcha'sı piksel farkı çözücüsüyle çözülen 12 parçalı bir montajdır ve posta hattı otomatik olarak döner, böylece ölü bir posta kutusu çalışmayı asla durdurmaz.
 
-## 🎁 Ücretsiz katman — ne kadar alıyorsunuz
+## 🎁 Ücretsiz katman — ne kadar alırsınız
 
-**Her hesap günlük bir giriş hibesi kazanır** (`POST /api/user/checkin` → 200, `quota_awarded ≈ 592-637`) — ucuz modelleri neredeyse bedava harcanabilir yapan şey KEY grubudur.
+**Her hesap günlük bir giriş hibesi kazanır** (`POST /api/user/checkin` → 200, `quota_awarded ≈ 592-637`) — ucuz modelleri neredeyse bedava harcamanızı sağlayan şey KEY grubudur.
 
 | Ne | Değer |
 | --- | --- |
-| Kart gerekli | **Hayır** |
+| Kart gerekli mi | **Hayır** |
 | Captcha | 12 parçalı mürekkep montajı — **araç içinde çözülür** |
 | Posta doğrulaması | gerekli — hat broker → temp.tf → emailnator arasında döner |
 | Günlük hibe | giriş, `quota_awarded ≈ 592-637` / gün |
@@ -54,7 +54,7 @@ Kezhan AI her yeni hesaba bir **günlük giriş hibesi** verir (günde ≈592-63
 > 💡 Ücretsiz katman Kezhan AI tarafından belirlenir ve değişebilir. Güncel sayıları [kezhanai.com](https://kezhanai.com) adresinden kontrol edin — ve kararı aracın kendi kapısına bırakın:
 
 ```bash
-node src/cli.js --verify-only     # every key in keys.txt is re-tested with a real chat call
+node src/cli.js --verify-only     # keys.txt içindeki her anahtar gerçek bir sohbet çağrısıyla yeniden test edilir
 ```
 
 ## 🤖 Modeller — 5'inin tamamı
@@ -83,16 +83,14 @@ curl https://kezhanai.com/v1/chat/completions \
 ## 🛠 Hızlı başlangıç
 
 ```bash
-
 # clone or fork this repository, then:
 cd kezhanai-bulk-apikey
 
-# 1) your proxy list, one per line (http://… or socks5://…)
-printf 'http://127.0.0.1:8080\n' > proxies.txt
+# 1) your proxy list, one per line (http://… or socks5://…) — optional, see below
+printf 'http://127.0.0.1:8080\n' > proxies.txt   # optional — without it the tool runs direct
 
 # 2) go
 node src/launcher.js        # interactive
-
 # or directly:
 node src/cli.js --count 50
 ```
@@ -104,6 +102,11 @@ node src/cli.js --count 50
 Başlatıcı proxy listesini, sayıyı ve modeli sorar, bunları `launcher.config.json` içinde hatırlar ve CLI'yi doğru bayraklarla çalıştırır.
 
 ## ✅ Çalıştığı doğrulandı — her anahtar test edilir
+
+> **Kalite kapıları.** Buradaki her anahtar, `keys.txt` dosyasına yazılmadan önce canlı bir `chat-200`'den geçti
+> (ölü anahtarlar asla gönderilmez). Yönlendirici kombinasyonları model düzeyinde aynı kuralı izler: bir giriş
+> **yalnızca model `chat-200` yanıtlıyorsa ve araçları çağırabiliyorsa** eklenir — araç desteği olmayan bir model,
+> ölü bir anahtar veya ölü bir sağlayıcı eklenmek yerine çıkarılır. **9Router ve OmniRoute** ile çalışır.
 
 | Kontrol | Sonuç |
 | --- | --- |
@@ -144,33 +147,49 @@ node src/cli.js --count N [--conc N] [--model <id>] [--screen] [--verify-only]
 
 | Bayrak | Varsayılan | Anlamı |
 | --- | --- | --- |
-| `--count` | 5 | denenecek tur (= hesap) sayısı |
+| `--count` | 5 | denenecek tur sayısı (= hesap) |
 | `--conc` | 10 | paralel tur (en fazla 12) |
 | `--model` | plan seçimi | açık kimlik kapıyı öne alır |
-| `--screen` | — | `proxies.txt` dosyasını aday dökümlerinden yeniler (gerekli ilk adım) |
-| `--verify-only` | — | `keys.txt` içindeki her anahtarı sohbet-200 kapısından yeniden geçirir |
+| `--screen` | — | `proxies.txt` dosyasını aday dökümlerinden yeniler (isteğe bağlı — üretim onsuz da çalışır) |
+| `--verify-only` | — | `keys.txt` içindeki her anahtarı chat-200 kapısından yeniden geçirir |
 | `--budget` | 2400 s | kesin durma — çalışanlar tur almayı bırakır |
 | `--mail-order` | `broker,temptf,emailnator` | posta kutusu hattı zinciri |
 
 ## 🛰️ Proxy arkasında
 
-Her istek havuzunuzdan bir çıkış üzerinden ayrılır. **Kritik bir taşıma kuralı:** captcha `verify` çağrısı, **meydan okumayı getiren aynı çıkıştan** gelmelidir (aynı çıkışta 5/5 geçer, çapraz çıkışta 0/5) — araç hesabı tek bir çıkışa sabitler ve her atlamada yeni bir posta kutusu kullanır. `--screen`, operatörün filosunda havuzu 62 → 132 çıkışa büyütmek için ≈3 dakikada 739 adayı yeniledi.
+**İsteğe bağlı — ölçekte önerilir (IP başına sınırlar, yasaklar).** Araç proxy olmadan da çalışır.
+
+- **Havuzla:** `proxies.txt` dosyasına her satıra bir çıkış yazın (`http://…` veya `socks5://…`, ya da `KEZHANAI_PROXIES` değişkenini listenize yönlendirin) ve her istek bu listeden bir çıkış üzerinden gider — bir hesap tüm yaşamı boyunca tek bir çıkış tutar.
+- **Havuz olmadan:** CLI `running WITHOUT a proxy (direct)` yazdırır ve doğrudan bağlanır — captcha, doğrulama postası, giriş, anahtar üretimi ve sohbet kapısı hepsi aynı şekilde çalışır.
+- `--screen`, `proxies.txt` dosyasını aday dökümlerinden yeniler; her iki modda da zorunlu bir ilk adım değildir.
+
+**Kritik bir taşıma kuralı:** captcha `verify` çağrısı, **challenge'ı getiren aynı çıkıştan** gelmelidir (aynı çıkış 5/5 geçer, çapraz çıkış 0/5) — araç hesabı tek bir çıkışa sabitler ve her atlamada yeni bir posta kutusu kullanır. `--screen`, operatörün filosunda havuzu 62 → 132 çıkışa büyütmek için ≈3 dakikada 739 adayı yeniledi.
 
 ## 📄 Dosyalar
 
 | Yol | İçerik |
 | --- | --- |
-| `keys.txt` | satır başına bir sohbet-200 anahtarı — git tarafından yok sayılır |
+| `keys.txt` | satır başına bir chat-200 anahtarı — git tarafından yok sayılır |
 | `keys-unfunded.txt` | kapıdan hiç geçmemiş anahtarlar — daha sonra yeniden deneyin |
 | `accounts.json` | tur başına ham kanıt (`captcha.hops`, `checkin`, `quota_awarded`, `plan.gate`, `checks[]`) |
 | `proxies.txt` | çıkış listesi — git tarafından yok sayılır |
 
-## 🔌 9Router'a bağlanma
+## 🔌 9Router'a bağlanın
 
-[9Router](https://9router.com) kendi kendine barındırılan, OpenAI uyumlu bir yönlendiricidir. Tek bir komut `keys.txt` dosyasını çalışan kombinasyonlara sahip bir sağlayıcı düğümüne dönüştürür:
+[9Router](https://9router.com) kendi sunucunuzda barındırılan, OpenAI uyumlu bir yönlendiricidir. Tek bir komut `keys.txt` dosyasını çalışan kombinasyonlara sahip bir sağlayıcı düğümüne dönüştürür:
 
 ```bash
 node src/connect-9router.js
+```
+
+Varsayılanlar: `--base http://localhost:20128`, `--password 123456`, `--name "kezhanai"`, `--prefix kezhanai`, `--base-url https://kezhanai.com/v1`.
+
+## 🔌 OmniRoute'a bağlanın
+
+[OmniRoute](https://omniroute.online) kendi sunucunuzda barındırılan, OpenAI uyumlu bir yönlendiricidir. Tek bir komut `keys.txt` dosyasını çalışan kombinasyonlara sahip bir sağlayıcı düğümüne dönüştürür:
+
+```bash
+node src/connect-omniroute.js
 ```
 
 Varsayılanlar: `--base http://localhost:20128`, `--password 123456`, `--name "kezhanai"`, `--prefix kezhanai`, `--base-url https://kezhanai.com/v1`.
@@ -181,9 +200,9 @@ Varsayılanlar: `--base http://localhost:20128`, `--password 123456`, `--name "k
 | --- | --- |
 | 🏢 Sağlayıcı | **Kezhan AI** — [kezhanai.com](https://kezhanai.com) |
 | 🎁 Sağlayıcının verdikleri | anahtar başına bir hesap — mürekkep captcha'sı çözülür, günlük giriş hibesi, her anahtar sohbet ile doğrulanır |
-| 🔑 Bir anahtar size ne kazandırır | kendi hesabına kapsanmış bir API anahtarı: aşağıdaki uç noktadaki 5 model kimliği, planınızın sınırlarında. Kota **hesapta** yaşar, bu aracın anahtar başına bir hesap oluşturmasının nedeni tam olarak budur |
+| 🔑 Bir anahtarın size kazandırdıkları | kendi hesabına kapsanmış bir API anahtarı: aşağıdaki uç noktadaki 5 model kimliği, planınızın sınırlarında. Kota **hesapta** yaşar, bu aracın anahtar başına bir hesap oluşturmasının nedeni tam da budur |
 | 🌐 API biçimi | OpenAI uyumlu: `POST https://kezhanai.com/v1/chat/completions` |
-| 🔒 Verileriniz | yalnızca kezhanai.com ve yapılandırdığınız posta kutusu arka ucuyla iletişim kurulur; anahtarlar makinenizde kalır |
+| 🔒 Verileriniz | yalnızca kezhanai.com ve yapılandırdığınız posta kutusu arka ucuna bağlanılır; anahtarlar makinenizde kalır |
 
 ## 🐞 Sorunlar
 
@@ -195,6 +214,6 @@ MIT © 2026 — bkz. [LICENSE](LICENSE).
 
 <div align="center">
 
-**[MIT](LICENSE)** © 2026 kezhanai-bulk-apikey contributors
+**[MIT](LICENSE)** © 2026 kezhanai-bulk-apikey katkıda bulunanlar
 
 </div>

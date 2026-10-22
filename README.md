@@ -18,9 +18,10 @@
 [![License](https://img.shields.io/badge/license-MIT-6ea8fe?style=for-the-badge)](LICENSE)
 [![Models](https://img.shields.io/badge/models-5%20served-412991?style=for-the-badge)](https://kezhanai.com)
 [![9Router](https://img.shields.io/badge/9Router-connector-8B5CF6?style=for-the-badge)](#-connect-to-9router)
+[![OmniRoute](https://img.shields.io/badge/OmniRoute-connector-8B5CF6?style=for-the-badge)](#-connect-to-omniroute)
 [![X](https://img.shields.io/badge/X-%40bigbullapp-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/bigbullapp)
 
-[🛠 Quick start](#-quick-start) · [🎁 Free tier](#-free-tier--how-much-you-get) · [🤖 Models](#-models--all-5-of-them) · [🧪 Use the API](#-how-to-use-the-api) · [✅ Verified](#-verified-working--every-key-is-tested) · [🧭 How it works](#-how-it-works) · [🔌 9Router](#-connect-to-9router) · [⚙️ Options](#️-cli-options) · [🛰️ Proxies](#️-behind-a-proxy) · [🐞 Issues](#-issues)
+[🛠 Quick start](#-quick-start) · [🎁 Free tier](#-free-tier--how-much-you-get) · [🤖 Models](#-models--all-5-of-them) · [🧪 Use the API](#-how-to-use-the-api) · [✅ Verified](#-verified-working--every-key-is-tested) · [🧭 How it works](#-how-it-works) · [🔌 9Router](#-connect-to-9router) · [🔌 OmniRoute](#-connect-to-omniroute) · [⚙️ Options](#️-cli-options) · [🛰️ Proxies](#️-behind-a-proxy) · [🐞 Issues](#-issues)
 
 </div>
 
@@ -102,6 +103,11 @@ The launcher asks for proxy list, count and model, remembers them in `launcher.c
 
 ## ✅ Verified working — every key is tested
 
+> **Quality gates.** Every key here passed a live `chat-200` before it was written to `keys.txt`
+> (dead keys are never shipped). Router combos follow the same rule at the model level: an entry is
+> added **only if the model answers `chat-200` and can call tools** — a model without tool support,
+> a dead key or a dead provider is dropped instead of added. Works with **9Router and OmniRoute**.
+
 | Check | Result |
 | --- | --- |
 | captcha `POST /api/registration/captcha` → `verify` | **200** (ink solver, first-try 9/12 hops) |
@@ -174,6 +180,16 @@ node src/cli.js --count N [--conc N] [--model <id>] [--screen] [--verify-only]
 
 ```bash
 node src/connect-9router.js
+```
+
+Defaults: `--base http://localhost:20128`, `--password 123456`, `--name "kezhanai"`, `--prefix kezhanai`, `--base-url https://kezhanai.com/v1`.
+
+## 🔌 Connect to OmniRoute
+
+[OmniRoute](https://omniroute.online) is a self-hosted, OpenAI-compatible router. One command turns `keys.txt` into a provider-node with working combos:
+
+```bash
+node src/connect-omniroute.js
 ```
 
 Defaults: `--base http://localhost:20128`, `--password 123456`, `--name "kezhanai"`, `--prefix kezhanai`, `--base-url https://kezhanai.com/v1`.
