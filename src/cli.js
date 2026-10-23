@@ -19,19 +19,15 @@
  * click order. The panel re-renders them, so the answer is a *structure* match
  * (src/ink.js, the rail's `captcha.rank`), not a byte compare or a model call.
  *
- * Requests go through your proxy list when one is provided (`proxies.txt`, or
- * `KEZHANAI_PROXIES` pointing at a list). Without a pool the tool connects
- * directly. Either way one account talks
- * through ONE exit: `verify` is refused when it arrives from a different IP
- * than the challenge fetch (measured, `proxy-lab/cn4b-exit-bind.js`), so the
- * whole register→login→token→chat flow stays pinned. A refused captcha answer
- * is not re-walked — a fresh challenge is fetched (same email, same exit).
+ * One account talks through ONE exit: `verify` is refused when it arrives from a
+ * different IP than the challenge fetch (measured, `proxy-lab/cn4b-exit-bind.js`),
+ * so the whole register→login→token→chat flow stays pinned. A refused captcha
+ * answer is not re-walked — a fresh challenge is fetched (same email, same exit).
  *
  * Usage:
- *   node src/cli.js --count 100 --conc 3 --model gpt-6.1-sol
- *   node src/cli.js --screen          # refresh proxies.txt (optional)
- *   node src/cli.js --verify-only     # re-run the chat gate
- *   node src/cli.js --help
+ *   node providers/kezhanai.com/mint.js --count 100 --conc 3 --model deepseek-v4.1-flash
+ *   node providers/kezhanai.com/mint.js --screen          # refresh proxies.txt
+ *   node providers/kezhanai.com/mint.js --verify-only     # re-run the chat gate
  */
 const fs = require('fs');
 const path = require('path');
@@ -66,25 +62,6 @@ const BUDGET_MS = parseInt(one('budget', '2400'), 10) * 1000;
 // create call) — the second one is the escape hatch when the Mailtrap cap bites.
 const BROKER_PORT = parseInt(one('broker-port', '9700'), 10);
 const GAP_MS = Math.max(0, parseInt(one('gap', '1000'), 10)); // industrial pacing is gone
-
-if (has('help') || has('h')) {
-  console.log(`kezhanai-bulk-apikey — mint Kezhan AI accounts, one key each, verified by a live chat call.
-
-  node src/cli.js --count 50        mint (a key is kept only after a chat 200)
-  node src/cli.js --verify-only     re-run every key in keys.txt through the chat gate
-  node src/cli.js --screen          refresh proxies.txt from the candidate dumps
-  node src/cli.js --help
-
-  --count N        rounds (= accounts) to attempt                    [5]
-  --conc N         rounds in flight (capped at 12)                  [10]
-  --model <id>     explicit id puts the gate first            [plan pick]
-  --budget SEC     hard stop — workers stop taking rounds          [2400]
-  --mail-order L   mailbox rail chain       [broker,temptf,emailnator]
-
-Requests go through your proxy list when one is provided (proxies.txt /
-KEZHANAI_PROXIES). Without a pool the tool connects directly.`);
-  process.exit(0);
-}
 
 // The checkout root in both layouts: `providers/kezhanai.com/` in the lab,
 // `<repo>/src/..` once published — where `connect-9router.js` reads keys.txt.
@@ -127,10 +104,10 @@ setInterval(() => {
 }, 120000).unref();
 
 /**
- * Screen candidates into proxies.txt (optional: with no list the mint runs
- * direct). 139 lab dumps against a 5 s connect timeout is ~25 minutes serial,
- * which is most of a mint budget, so the probes run in a bounded wave and the
- * log shows one line per 25 finished candidates.
+ * Screen candidates into proxies.txt (a run without a live list mints nothing).
+ * 139 lab dumps against a 5 s connect timeout is ~25 minutes serial, which is
+ * most of a mint budget, so the probes run in a bounded wave and the log shows
+ * one line per 25 finished candidates.
  */
 async function screenPool(pool) {
   const cands = exits.candidates();
@@ -170,8 +147,7 @@ async function pace() {
  * the picks back to the last good exit, which is a thundering herd at conc 10.
  */
 function pickExit(pool) {
-  // `e` may be the `null` direct sentinel (no proxy list): it never dies.
-  const live = pool.exits.filter((e) => (pool.dead.get(e && e.line) || 0) < 2);
+  const live = pool.exits.filter((e) => (pool.dead.get(e.line) || 0) < 2);
   const from = live.length ? live : pool.exits;
   const pick = from[Math.floor(Math.random() * from.length)];
   pool.alive(pick);
@@ -236,7 +212,7 @@ async function mintOne(pool, index, MAIL) {
     if (!solo) {
       const conn = pickExit(pool);
       solo = new lib.ExitPool([conn], { label: 'kz-conn' });
-      rec.exit = conn ? `${conn.host}:${conn.port}` : 'direct';
+      rec.exit = `${conn.host}:${conn.port}`;
     }
     if (hops > 0) {
       mbox = await MAIL.create({ proxy: pickExit(pool) });
@@ -403,24 +379,27 @@ async function mintOne(pool, index, MAIL) {
 }
 
 (async () => {
+  if (has('help') || argv.includes('-h')) {
+    console.log('kezhanai-bulk — bulk-create Kezhan AI keys (no direct traffic: a proxy pool is required)');
+    console.log('  node src/cli.js --count 100 --conc 3 [--model <id>] [--pool proxies.txt]');
+    console.log('  node src/cli.js --screen        # vet/refresh the exit pool');
+    console.log('  node src/cli.js --verify-only   # re-run the live chat gate over keys.txt');
+    return;
+  }
   if (has('screen')) {
     const pool = new lib.ExitPool([], { label: 'screen' });
     await screenPool(pool);
     return;
   }
 
-  // No pool = DIRECT mode: a proxy is recommended at scale (per-IP limits,
-  // bans), but the tool works without one. `null` is the direct sentinel — the
-  // pool, `pickExit` and the mail rail all take it, and `lib.req` dials the
-  // panel itself when it is handed no exit.
-  let list = exits.list();
+  const list = exits.list();
   if (!list.length) {
-    log(`no proxy list at ${exits.LIST} — running WITHOUT a proxy (direct). Put exits there to rotate per account.`);
-    list = [null];
+    log('proxies.txt is empty — run --screen first (no direct traffic, ever)');
+    process.exit(2);
   }
   const pool = new lib.ExitPool(list, { label: 'kezhanai' });
   const MAIL = new MailRails({ order: MAIL_ORDER, log: (m) => log(m), brokerPort: BROKER_PORT, codeWaitMs: CODE_WAIT_MS, pollMs: POLL_MS });
-  log(`mint start count=${COUNT} conc=${CONC} model=${MODEL} exits=${list.filter(Boolean).length || 'direct'} broker=:${BROKER_PORT}`);
+  log(`mint start count=${COUNT} conc=${CONC} model=${MODEL} exits=${list.length} broker=:${BROKER_PORT}`);
 
   if (has('verify-only')) {
     const keys = fs.existsSync(KEYS) ? fs.readFileSync(KEYS, 'utf8').split(/\r?\n/).filter(Boolean) : [];

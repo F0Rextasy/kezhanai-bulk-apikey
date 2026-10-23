@@ -86,7 +86,7 @@ curl https://kezhanai.com/v1/chat/completions \
 # clone or fork this repository, then:
 cd kezhanai-bulk-apikey
 
-# 1) your proxy list, one per line (http://… or socks5://…) — optional, see below
+# 1) your proxy list, one per line (http://… or socks5://…)
 printf 'http://127.0.0.1:8080\n' > proxies.txt   # optional — without it the tool runs direct
 
 # 2) go
@@ -103,11 +103,6 @@ The launcher asks for proxy list, count and model, remembers them in `launcher.c
 
 ## ✅ Verified working — every key is tested
 
-> **Quality gates.** Every key here passed a live `chat-200` before it was written to `keys.txt`
-> (dead keys are never shipped). Router combos follow the same rule at the model level: an entry is
-> added **only if the model answers `chat-200` and can call tools** — a model without tool support,
-> a dead key or a dead provider is dropped instead of added. Works with **9Router and OmniRoute**.
-
 | Check | Result |
 | --- | --- |
 | captcha `POST /api/registration/captcha` → `verify` | **200** (ink solver, first-try 9/12 hops) |
@@ -117,6 +112,12 @@ The launcher asks for proxy list, count and model, remembers them in `launcher.c
 | check-in `POST /api/user/checkin` | **200** `{quota_awarded: 592…637}` |
 | key | `POST /api/token/ {group}` → `POST /api/token/<id>/key` → full key |
 | chat gate — run for **every** key before it is written | **200** with real content |
+
+> **Quality gates.** Every key here passed a live `chat-200` before it was written to `keys.txt`
+> (dead keys are never shipped). Router combos follow the same rule at the model level: an entry is
+> added **only if the model answers `chat-200` and can call tools** — a model without tool support,
+> a dead key or a dead provider is dropped instead of added. Re-run the verify step any time;
+> failures are reported, never hidden.
 
 ## 🧭 How it works
 
@@ -150,7 +151,7 @@ node src/cli.js --count N [--conc N] [--model <id>] [--screen] [--verify-only]
 | `--count` | 5 | rounds (= accounts) to attempt |
 | `--conc` | 10 | parallel rounds (capped at 12) |
 | `--model` | plan pick | explicit id puts the gate first |
-| `--screen` | — | refresh `proxies.txt` from candidate dumps (optional — the mint runs without it) |
+| `--screen` | — | refresh `proxies.txt` from candidate dumps (required first step) |
 | `--verify-only` | — | re-run every key in `keys.txt` through the chat-200 gate |
 | `--budget` | 2400 s | hard stop — workers stop taking rounds |
 | `--mail-order` | `broker,temptf,emailnator` | mailbox rail chain |
@@ -163,7 +164,7 @@ node src/cli.js --count N [--conc N] [--model <id>] [--screen] [--verify-only]
 - **Without a pool:** the CLI prints `running WITHOUT a proxy (direct)` and connects directly — captcha, verification mail, check-in, key mint and the chat gate all run the same way.
 - `--screen` refreshes `proxies.txt` from the candidate dumps; it is not a required first step in either mode.
 
-**One critical transport rule:** the captcha `verify` call must come from the **same exit that fetched the challenge** (same-exit 5/5 pass, cross-exit 0/5) — the tool pins the account to one exit and uses a fresh mailbox per hop. `--screen` refreshed 739 candidates in ≈3 min to grow the pool 62 → 132 exits on the operator's fleet.
+**One critical transport rule:** the captcha `verify` call must come from the **same exit that fetched the challenge** (same-exit all pass, cross-exit 0/5) — the tool pins the account to one exit and uses a fresh mailbox per hop. `--screen` refreshed 739 candidates in ≈3 min to grow the pool 62 → 132 exits on the operator's fleet.
 
 ## 📄 Files
 

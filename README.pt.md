@@ -33,19 +33,19 @@
 
 ---
 
-## ✨ Por que isto existe
+## ✨ Por que isso existe
 
-O Kezhan AI concede a cada nova conta um **bônus diário de check-in** (≈592-637 de cota por dia) e esta ferramenta transforma isso em um `keys.txt` onde **cada linha sobreviveu a uma chamada de chat real**. A unidade que escala é *uma conta por chave*, o captcha de cadastro é uma montagem de 12 peças resolvida com um solucionador por diferença de pixels, e o trilho de e-mail rotaciona automaticamente para que uma caixa de entrada morta nunca interrompa a execução.
+O Kezhan AI concede a cada nova conta um **bônus diário de check-in** (≈592-637 de cota por dia) e esta ferramenta transforma isso em um `keys.txt` onde **cada linha sobreviveu a uma chamada de chat ao vivo**. A unidade que escala é *uma conta por chave*, o captcha de cadastro é uma montagem de 12 peças resolvida com um solucionador de diferença de pixels, e o trilho de e-mail gira automaticamente para que uma caixa de entrada morta nunca interrompa a execução.
 
 ## 🎁 Plano gratuito — quanto você recebe
 
-**Cada conta ganha um bônus diário de check-in** (`POST /api/user/checkin` → 200, `quota_awarded ≈ 592-637`) — o grupo KEY é o que torna os modelos baratos quase gratuitos de usar.
+**Cada conta ganha um bônus diário de check-in** (`POST /api/user/checkin` → 200, `quota_awarded ≈ 592-637`) — o grupo KEY é o que torna os modelos baratos praticamente gratuitos de usar.
 
 | O quê | Valor |
 | --- | --- |
 | Cartão exigido | **Não** |
 | Captcha | Montagem de tinta de 12 peças — **resolvido pela própria ferramenta** |
-| Verificação de e-mail | obrigatória — o trilho rotaciona broker → temp.tf → emailnator |
+| Verificação de e-mail | obrigatória — o trilho gira entre broker → temp.tf → emailnator |
 | Bônus diário | check-in, `quota_awarded ≈ 592-637` / dia |
 | A unidade que escala | **uma conta = uma chave** → `--count N` significa "N contas" |
 
@@ -59,7 +59,7 @@ node src/cli.js --verify-only     # every key in keys.txt is re-tested with a re
 
 ## 🤖 Modelos — todos os 5
 
-Apenas os ids que responderam um **200** ao vivo estão listados:
+Apenas ids que responderam um **200** ao vivo estão listados:
 
 | ID do modelo | ✓ |
 | --- | --- |
@@ -69,7 +69,7 @@ Apenas os ids que responderam um **200** ao vivo estão listados:
 | `gpt-5.6-sol` | ✓ |
 | `gpt-6-astra` | ✓ |
 
-`gpt-6.1-sol` é o modelo pago mais barato (grupo `gpt-pro`, proporção de grupo **0.0265**) e também serve como portão padrão. **Não há id `deepseek-*`** neste painel (37 ids: gpt-5.x/6.x + família claude). Ids que recusam conhecidos: `gpt-5.6-luna` (403 `model_disabled`), `claude-haiku-4-5` (403 cota antes do check-in), ids com `model_ratio=0` (400 `价格尚未由管理员配置`).
+`gpt-6.1-sol` é o modelo pago mais barato (grupo `gpt-pro`, proporção do grupo **0.0265**) e também serve como portão padrão. **Não há id `deepseek-*`** neste painel (37 ids: gpt-5.x/6.x + família claude). Ids que recusam conhecidos: `gpt-5.6-luna` (403 `model_disabled`), `claude-haiku-4-5` (403 cota antes do check-in), ids com `model_ratio=0` (400 `价格尚未由管理员配置`).
 
 ## 🧪 Como usar a API
 
@@ -83,10 +83,11 @@ curl https://kezhanai.com/v1/chat/completions \
 ## 🛠 Início rápido
 
 ```bash
+
 # clone or fork this repository, then:
 cd kezhanai-bulk-apikey
 
-# 1) your proxy list, one per line (http://… or socks5://…) — optional, see below
+# 1) your proxy list, one per line (http://… or socks5://…)
 printf 'http://127.0.0.1:8080\n' > proxies.txt   # optional — without it the tool runs direct
 
 # 2) go
@@ -95,18 +96,13 @@ node src/launcher.js        # interactive
 node src/cli.js --count 50
 ```
 
-`--screen` atualiza a lista de saídas primeiro (despejos de candidatos → ao vivo, `email_verification` visível); cada chave é gravada **somente** após um 200 de chat ao vivo.
+`--screen` atualiza a lista de saídas primeiro (dumps de candidatos → ao vivo, `email_verification` visível); cada chave é escrita **somente** após um 200 de chat ao vivo.
 
 ### 🖱️ O launcher
 
 O launcher pergunta a lista de proxies, a quantidade e o modelo, memoriza tudo em `launcher.config.json` e executa a CLI com as flags corretas.
 
 ## ✅ Verificado e funcionando — cada chave é testada
-
-> **Portões de qualidade.** Cada chave aqui passou por um `chat-200` ao vivo antes de ser gravada em `keys.txt`
-> (chaves mortas nunca são entregues). As combinações do roteador seguem a mesma regra no nível do modelo: uma entrada é
-> adicionada **somente se o modelo responder `chat-200` e conseguir chamar ferramentas** — um modelo sem suporte a ferramentas,
-> uma chave morta ou um provedor morto é descartado em vez de adicionado. Funciona com **9Router e OmniRoute**.
 
 | Verificação | Resultado |
 | --- | --- |
@@ -116,7 +112,13 @@ O launcher pergunta a lista de proxies, a quantidade e o modelo, memoriza tudo e
 | auth | `Authorization: Bearer <access_token>` + `New-Api-User: <uid>` em cada chamada |
 | check-in `POST /api/user/checkin` | **200** `{quota_awarded: 592…637}` |
 | chave | `POST /api/token/ {group}` → `POST /api/token/<id>/key` → chave completa |
-| portão de chat — executado para **cada** chave antes de ser gravada | **200** com conteúdo real |
+| portão de chat — executado para **cada** chave antes de ser escrita | **200** com conteúdo real |
+
+> **Portões de qualidade.** Cada chave aqui passou por um `chat-200` ao vivo antes de ser escrita em `keys.txt`
+> (chaves mortas nunca são entregues). As combinações do roteador seguem a mesma regra no nível do modelo: uma entrada é
+> adicionada **somente se o modelo responder `chat-200` e conseguir chamar ferramentas** — um modelo sem suporte a ferramentas,
+> uma chave morta ou um provedor morto é descartado em vez de adicionado. Reexecute a etapa de verificação a qualquer momento;
+> as falhas são reportadas, nunca escondidas.
 
 ## 🧭 Como funciona
 
@@ -150,33 +152,33 @@ node src/cli.js --count N [--conc N] [--model <id>] [--screen] [--verify-only]
 | `--count` | 5 | rodadas (= contas) a tentar |
 | `--conc` | 10 | rodadas paralelas (limitado a 12) |
 | `--model` | escolha do plano | id explícito coloca o portão primeiro |
-| `--screen` | — | atualiza `proxies.txt` a partir dos despejos de candidatos (opcional — a criação funciona sem isso) |
+| `--screen` | — | atualiza `proxies.txt` a partir dos dumps de candidatos (primeira etapa obrigatória) |
 | `--verify-only` | — | reexecuta cada chave em `keys.txt` pelo portão de chat-200 |
-| `--budget` | 2400 s | parada rígida — os workers param de aceitar rodadas |
+| `--budget` | 2400 s | parada forçada — os workers param de aceitar rodadas |
 | `--mail-order` | `broker,temptf,emailnator` | cadeia do trilho de caixas de entrada |
 
 ## 🛰️ Atrás de um proxy
 
 **Opcional — recomendado em escala (limites por IP, banimentos).** A ferramenta também funciona sem proxy.
 
-- **Com um pool:** escreva uma saída por linha em `proxies.txt` (`http://…` ou `socks5://…`, ou aponte `KEZHANAI_PROXIES` para sua lista) e cada requisição passa por uma saída dessa lista — uma conta mantém uma saída por toda a sua vida.
+- **Com um pool:** escreva uma saída por linha em `proxies.txt` (`http://…` ou `socks5://…`, ou aponte `KEZHANAI_PROXIES` para sua lista) e cada requisição passa por uma saída dessa lista — uma conta mantém uma saída durante toda a sua vida.
 - **Sem um pool:** a CLI imprime `running WITHOUT a proxy (direct)` e conecta diretamente — captcha, e-mail de verificação, check-in, criação de chave e o portão de chat funcionam da mesma forma.
-- `--screen` atualiza `proxies.txt` a partir dos despejos de candidatos; não é um primeiro passo obrigatório em nenhum dos modos.
+- `--screen` atualiza `proxies.txt` a partir dos dumps de candidatos; não é uma primeira etapa obrigatória em nenhum dos modos.
 
-**Uma regra crítica de transporte:** a chamada de `verify` do captcha deve vir da **mesma saída que buscou o desafio** (mesma saída 5/5 aprovadas, saídas cruzadas 0/5) — a ferramenta fixa a conta em uma saída e usa uma caixa de entrada nova a cada salto. `--screen` atualizou 739 candidatos em ≈3 min para aumentar o pool de 62 → 132 saídas na frota do operador.
+**Uma regra crítica de transporte:** a chamada de `verify` do captcha deve vir da **mesma saída que buscou o desafio** (mesma saída: tudo passa, saídas cruzadas: 0/5) — a ferramenta fixa a conta em uma saída e usa uma caixa de entrada nova a cada salto. `--screen` atualizou 739 candidatos em ≈3 min para aumentar o pool de 62 → 132 saídas na frota do operador.
 
 ## 📄 Arquivos
 
 | Caminho | Conteúdo |
 | --- | --- |
-| `keys.txt` | uma chave com chat-200 por linha — ignorado pelo git |
+| `keys.txt` | uma chave chat-200 por linha — ignorado pelo git |
 | `keys-unfunded.txt` | chaves que nunca passaram pelo portão — tente novamente depois |
 | `accounts.json` | evidência bruta por rodada (`captcha.hops`, `checkin`, `quota_awarded`, `plan.gate`, `checks[]`) |
 | `proxies.txt` | lista de saídas — ignorado pelo git |
 
 ## 🔌 Conectar ao 9Router
 
-[9Router](https://9router.com) é um roteador auto-hospedado e compatível com OpenAI. Um comando transforma `keys.txt` em um nó de provedor com combinações funcionais:
+O [9Router](https://9router.com) é um roteador auto-hospedado e compatível com OpenAI. Um comando transforma `keys.txt` em um nó de provedor com combinações funcionais:
 
 ```bash
 node src/connect-9router.js
@@ -186,7 +188,7 @@ Padrões: `--base http://localhost:20128`, `--password 123456`, `--name "kezhana
 
 ## 🔌 Conectar ao OmniRoute
 
-[OmniRoute](https://omniroute.online) é um roteador auto-hospedado e compatível com OpenAI. Um comando transforma `keys.txt` em um nó de provedor com combinações funcionais:
+O [OmniRoute](https://omniroute.online) é um roteador auto-hospedado e compatível com OpenAI. Um comando transforma `keys.txt` em um nó de provedor com combinações funcionais:
 
 ```bash
 node src/connect-omniroute.js
@@ -206,11 +208,11 @@ Padrões: `--base http://localhost:20128`, `--password 123456`, `--name "kezhana
 
 ## 🐞 Problemas
 
-Se o painel mudar o formato do captcha, as proporções de grupo ou o bônus de check-in, a ferramenta para nessa etapa e avisa. **[Abra uma issue](../../issues)** com o comando que você executou e a saída exata; PRs são bem-vindos.
+Se o painel mudar o formato do captcha, as proporções dos grupos ou o bônus de check-in, a ferramenta para nessa etapa e avisa. **[Abra uma issue](../../issues)** com o comando que você executou e a saída exata; PRs são bem-vindos.
 
 ## 📄 Licença
 
-MIT © 2026 — veja [LICENSE](LICENSE).
+MIT © 2026 — consulte [LICENSE](LICENSE).
 
 <div align="center">
 

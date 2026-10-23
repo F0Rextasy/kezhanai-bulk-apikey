@@ -133,7 +133,7 @@ function loadProxyList(file) {
  */
 function loadPoolFile(file) {
   const fs = require('fs');
-  const text = fs.readFileSync(file, 'utf8');
+  const text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
   const clean = text
     .split(/\r?\n/)
     .map((line) => line.replace(/\s+#.*$/, '').replace(/\s+\/\/.*$/, '').trim())

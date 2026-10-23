@@ -6,9 +6,6 @@
  * and each dead exit costs a full connect timeout, so the rail keeps its own
  * screened list (`proxies.txt`, one `scheme://host:port` per line, `# notes`
  * allowed) and re-screens candidates into it only when asked (`--screen`).
- *
- * The list is optional: with no file — or an empty one — the mint switches to
- * DIRECT mode (see `lib.req`), and no request is refused for the missing exits.
  */
 const fs = require('fs');
 const path = require('path');
@@ -20,9 +17,7 @@ const { parseProxy, loadPoolFile } = require('./proxy.js');
 // `keys.txt`), and ROOT is only used for the lab's own candidate dumps.
 const SHIPPED = path.basename(path.resolve(__dirname, '..')) === 'src';
 const DIR = SHIPPED ? path.resolve(__dirname, '..', '..') : path.resolve(__dirname, '..');
-// The launcher hands the file it asked for over as `KEZHANAI_PROXIES`; without
-// one the conventional `proxies.txt` beside `src/` is used.
-const LIST = process.env.KEZHANAI_PROXIES ? path.resolve(DIR, process.env.KEZHANAI_PROXIES) : path.join(DIR, 'proxies.txt');
+const LIST = path.join(DIR, 'proxies.txt');
 const ROOT = SHIPPED ? null : path.resolve(__dirname, '..', '..', '..');
 
 /** Candidate files the lab's screeners already wrote, cheapest-first. */
@@ -49,13 +44,7 @@ const PER_FILE_CAP = 300;
 
 function list() {
   const out = [];
-  let lines;
-  try {
-    lines = loadPoolFile(LIST);
-  } catch (e) {
-    return out; // no list file at all: the CLI turns this into DIRECT mode
-  }
-  for (const line of lines) {
+  for (const line of loadPoolFile(LIST)) {
     const p = typeof line === 'string' ? parseProxy(line) : line;
     if (p) out.push(p);
   }
