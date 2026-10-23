@@ -349,11 +349,14 @@ async function mintOne(pool, index, MAIL) {
     const chat = await rl(solo, '/v1/chat/completions', {
       method: 'POST',
       headers: { authorization: 'Bearer ' + key },
-      body: { model, messages: [{ role: 'user', content: 'Reply OK' }], max_tokens: 8 },
+      // max_tokens 8 starves a reasoning model (measured: completion_tokens 35, of which
+      // 28 reasoning) -> an empty content field is read as "provider produced nothing".
+      body: { model, messages: [{ role: 'user', content: 'Reply OK' }], max_tokens: 256 },
       timeoutMs: 90000,
     });
     const cj = (() => { try { return JSON.parse(chat.text); } catch (e) { return null; } })();
-    const txt = cj && cj.choices && cj.choices[0] && cj.choices[0].message && String(cj.choices[0].message.content || '').trim();
+    const msg = cj && cj.choices && cj.choices[0] && cj.choices[0].message;
+    const txt = msg && String(msg.content || msg.reasoning_content || msg.reasoning || '').trim();
     checks.push({ model, status: chat.status, content: txt || null, error: txt ? null : String(chat.text).slice(0, 200) });
     log(`#${index} chat ${model} → ${chat.status} ${txt ? JSON.stringify(txt.slice(0, 20)) : String(chat.text).slice(0, 120)}`);
     if (chat.status === 200 && txt) break;
