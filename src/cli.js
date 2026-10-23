@@ -43,6 +43,7 @@ const { MailRails } = require('./vendor/mail-rail.js');
 const argv = process.argv.slice(2);
 const one = (n, d) => { const i = argv.indexOf('--' + n); return i === -1 ? d : argv[i + 1]; };
 const has = (n) => argv.includes('--' + n);
+const DRY = has('dry'); // resolve the plan, write nothing, send nothing
 
 const BASE = 'https://kezhanai.com';
 const COUNT = parseInt(one('count', '5'), 10);
@@ -66,9 +67,18 @@ const GAP_MS = Math.max(0, parseInt(one('gap', '1000'), 10)); // industrial paci
 // The checkout root in both layouts: `providers/kezhanai.com/` in the lab,
 // `<repo>/src/..` once published — where `connect-9router.js` reads keys.txt.
 const DIR = path.basename(__dirname) === 'src' ? path.resolve(__dirname, '..') : __dirname;
-fs.mkdirSync(path.join(DIR, 'out'), { recursive: true });
 const KEYS = path.join(DIR, 'keys.txt');
 const UNFUNDED = path.join(DIR, 'keys-unfunded.txt');
+/** Dead keys leave keys.txt and are parked here — repo root, like keys.txt. */
+const KEYS_DEAD = path.join(DIR, 'keys-dead.txt');
+/** A key the panel refuses outright (auth rejection) — never 429/5xx/transport. */
+const keyRejected = (status) => status === 401 || status === 403;
+/** key<TAB>reason<TAB>ISO date, one line per dead key, parked next to keys.txt. */
+function recordDeadKey(key, reason) {
+  try {
+    fs.appendFileSync(KEYS_DEAD, `${key}\t${String(reason).replace(/\s+/g, ' ').slice(0, 100)}\t${nowIso()}\n`);
+  } catch (e) { /* diagnostics must never break the run */ }
+}
 const ACCOUNTS = path.join(DIR, 'accounts.json');
 const LOG = path.join(DIR, 'out', `mint-${new Date().toISOString().slice(0, 10)}.log`);
 
@@ -374,6 +384,7 @@ async function mintOne(pool, index, MAIL) {
   } else {
     const balanceWall = checks.some((c) => /余额|额度|balance|quota|group|分组|无权|no access|insufficient/i.test(c.error || ''));
     rec.status = balanceWall ? 'key-unfunded' : 'key-unverified';
+    if (!balanceWall && checks.some((c) => keyRejected(c.status))) recordDeadKey(key, `chat ${checks.filter((c) => keyRejected(c.status)).map((c) => c.status).join('/')}`);
     appendKey(UNFUNDED, key);
     state.unfunded++;
     log(`✖ #${index} key NOT promoted (${rec.status}) — ${checks.map((c) => c.status).join('/')}`);
@@ -387,8 +398,23 @@ async function mintOne(pool, index, MAIL) {
     console.log('  node src/cli.js --count 100 --conc 3 [--model <id>] [--pool proxies.txt]');
     console.log('  node src/cli.js --screen        # vet/refresh the exit pool');
     console.log('  node src/cli.js --verify-only   # re-run the live chat gate over keys.txt');
+    console.log('  node src/cli.js --count 100 --dry   # print the resolved plan, write nothing');
     return;
   }
+
+  // `--dry` first, `out/` only for a real run: `--help`/`--dry` must not create
+  // anything in the checkout (dry-mutation audit, 2026-10-23).
+  if (DRY) {
+    console.log(`kezhanai dry run — nothing written, nothing sent
+  command   node src/cli.js --count ${COUNT}
+  count     ${COUNT}
+  conc      ${CONC}
+  model     ${MODEL || '(cheapest priced model the account can reach)'}
+  exits     ${exits.list().length} in proxies.txt
+  keys      ${KEYS}`);
+    return;
+  }
+  fs.mkdirSync(path.join(DIR, 'out'), { recursive: true });
   if (has('screen')) {
     const pool = new lib.ExitPool([], { label: 'screen' });
     await screenPool(pool);
@@ -411,6 +437,7 @@ async function mintOne(pool, index, MAIL) {
       const r = await rl(pool, '/v1/chat/completions', { method: 'POST', headers: { authorization: 'Bearer ' + k }, body: { model: MODEL, messages: [{ role: 'user', content: 'Reply OK' }], max_tokens: 8 }, timeoutMs: 90000 });
       log(`${k.slice(0, 10)}… → ${r.status} ${String(r.text).slice(0, 100)}`);
       if (r.status === 200) ok++;
+      if (keyRejected(r.status)) recordDeadKey(k, `chat ${r.status}`);
       await sleep(600);
     }
     log(`verify-only: ${ok}/${keys.length} alive`);
